@@ -93,6 +93,8 @@ void Linkedlist::printList()
   
     while (dummy != NULL) {
         x+= dummy->da;//we add the values of each node to the sum variable
+	    // here it was not clear whether we should take the number of occurences into account so I did not however
+	    //if we wanted to take into account we will change the previous line to be x+= dummy->da*dummy->occer;
         dummy = dummy->sec;//we then move to the next move
     }
     return x;
