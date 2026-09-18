@@ -1,140 +1,113 @@
-#include <iostream>
-using namespace std;
-  
+#ifndef ASSIGN4_LINKEDLIST_H
+#define ASSIGN4_LINKEDLIST_H
 
-class Node {
-public:
-    int da;int occer;
-    Node* sec;
-  
-    Node()// the default constructor
-    {
-        da = 0;occer=1;
-        sec = NULL;
-    }
-  
-    Node(int da)// the parametrized constructor
-    {
-        this->da = da;
-        this->sec = NULL;occer=1;
-    }
+#include <cstddef>
+#include <iostream>
+#include <utility>
+
+// One node per distinct value; occer records how many input elements it represents.
+struct Node {
+    int da;
+    int occer = 1;
+    Node* sec = nullptr;
+
+    explicit Node(int value) : da(value) {}
 };
-  
 
 class Linkedlist {
-    Node* start;
-  
 public:
-    Linkedlist() { start = NULL; }
-  
-   
-  
-    void printList();
-    int SUMofALLnodes();
-   void Vector_to_linkedlist(Node*);
-     void Add(Node *N);
-    void deleteNode(int);
-   
+    Linkedlist() = default;
+    ~Linkedlist() { clear(); }
+
+    Linkedlist(const Linkedlist&) = delete;
+    Linkedlist& operator=(const Linkedlist&) = delete;
+
+    Linkedlist(Linkedlist&& other) noexcept : start_(std::exchange(other.start_, nullptr)) {}
+    Linkedlist& operator=(Linkedlist&& other) noexcept {
+        if (this != &other) {
+            clear();
+            start_ = std::exchange(other.start_, nullptr);
+        }
+        return *this;
+    }
+
+    // Takes ownership of N. Repeated values increase occer rather than add nodes.
+    void Vector_to_linkedlist(Node* N) {
+        if (!N) return;
+        N->sec = nullptr;
+        for (Node* current = start_; current; current = current->sec) {
+            if (current->da == N->da) {
+                ++current->occer;
+                delete N;
+                return;
+            }
+        }
+        Add(N);
+    }
+
+    // Takes ownership of N. Prefer Vector_to_linkedlist for deduplication.
+    void Add(Node* N) {
+        if (!N) return;
+        N->sec = nullptr;
+        if (!start_) {
+            start_ = N;
+            return;
+        }
+        Node* tail = start_;
+        while (tail->sec) tail = tail->sec;
+        tail->sec = N;
+    }
+
+    // Removes the first node with this value. Returns whether one was found.
+    bool deleteNode(int value) {
+        Node** link = &start_;
+        while (*link && (*link)->da != value) link = &(*link)->sec;
+        if (!*link) return false;
+        Node* victim = *link;
+        *link = victim->sec;
+        delete victim;
+        return true;
+    }
+
+    // Sums distinct node values, NOT value * frequency (original assignment semantics).
+    long long SUMofALLnodes() const {
+        long long sum = 0;
+        for (const Node* node = start_; node; node = node->sec) sum += node->da;
+        return sum;
+    }
+
+    int occurrences(int value) const {
+        for (const Node* node = start_; node; node = node->sec)
+            if (node->da == value) return node->occer;
+        return 0;
+    }
+
+    std::size_t distinctValues() const {
+        std::size_t result = 0;
+        for (const Node* node = start_; node; node = node->sec) ++result;
+        return result;
+    }
+
+    void printList(std::ostream& out = std::cout) const {
+        if (!start_) {
+            out << "List empty\n";
+            return;
+        }
+        for (const Node* node = start_; node; node = node->sec)
+            out << node->da << " it occurred " << node->occer << " times\n";
+        out << '\n';
+    }
+
+private:
+    Node* start_ = nullptr;
+
+    void clear() noexcept {
+        while (start_) {
+            Node* next = start_->sec;
+            delete start_;
+            start_ = next;
+        }
+    }
 };
 
-
-    void Linkedlist::deleteNode(int n) {
-// If the linked list is empty, return
-if (start == nullptr) {
-return;
-}
-// If the start node is to be removed
-if (start->da == n) {
-    Node* neww = start;
-    start = start->sec;
-    delete neww;
-    return;
-}
-
-// Traverse the linked list to find the node to be removed
-Node* now = start;
-while (now->sec != nullptr) {
-    if (now->sec->da == n) {
-        Node* neww = now->sec;
-        now->sec = neww->sec;
-        delete neww;
-        return;
-    }
-    now = now->sec;
-}
-}
-
-
-  
-
-void Linkedlist::printList()
-{
-    Node* dummy = start;
-  
-    if (start == NULL) {// check if there exists any elements in the linked list
-        cout << "List empty" << endl;
-        return;
-    }
-  
-    while (dummy != NULL) {
-        cout << dummy->da << " "<<"it occured "<<dummy->occer<<" times"<<"\n";// print the number in the node with the number of occurences
-        dummy = dummy->sec;// then move to the second node
-    }
-    cout<<"\n";
-}
-  int Linkedlist::SUMofALLnodes()
-{
-    int x=0;
-    Node* dummy = start;
-  
-    if (start == NULL) {// we check if the lost is empty
-        cout << "List empty" << endl;
-    }
-  
-    while (dummy != NULL) {
-        x+= dummy->da;//we add the values of each node to the sum variable
-	    // here it was not clear whether we should take the number of occurences into account so I did not however
-	    //if we wanted to take into account we will change the previous line to be x+= dummy->da*dummy->occer;
-        dummy = dummy->sec;//we then move to the next move
-    }
-    return x;
-}
-void Linkedlist::Add(Node *N)
-{int aaa=0;
-	if (start == NULL)
-	{
-		start = N;
-	}
-	else
-	{
-        	Node* dummy = start;
-		while(dummy->sec != NULL)
-		{
-			if((N->da) == (dummy->da))
-			{
-				cout << "This value already exists!!" << endl;
-				dummy->occer++; aaa++;
-				return;
-			}
-            if(aaa!=0){return;}
-			else{dummy = dummy->sec;}
-		}
-                    if(aaa!=0){return;}
-		else{dummy->sec = N;}
-	}
-}
-
-void Linkedlist::Vector_to_linkedlist(Node *N)
-{
-	Node* dummy = start;
-	while(dummy != NULL)
-	{
-		if(N->da == dummy->da)
-		{	
-			dummy->occer++;//we check if this value has occured before
-			return;
-		}
-		dummy = dummy->sec;//we then move to the next node
-	}
-	Add(N);
-}
+#endif
